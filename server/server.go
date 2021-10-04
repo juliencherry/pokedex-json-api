@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"pokedex.juliencherry.net/pokeapi"
 )
 
 type Server struct{}
 
 type PokemonResponse struct {
-	Errors []ResponseErrors `json:"errors"`
+	Data   pokeapi.Pokemon  `json:"data,omitempty"`
+	Errors []ResponseErrors `json:"errors,omitempty"`
 }
 
 type ResponseErrors struct {
@@ -58,10 +61,15 @@ func preparePokemonResponse(r *http.Request) *PokemonResponse {
 		return response
 	}
 
-	response.Errors = append(response.Errors, ResponseErrors{
-		Status: fmt.Sprint(http.StatusNotImplemented),
-		Title:  http.StatusText(http.StatusNotImplemented),
-	})
+	client := &pokeapi.Client{}
+	pokemon, err := client.Ditto()
+	if err != nil {
+		response.Errors = append(response.Errors, ResponseErrors{
+			Status: fmt.Sprint(http.StatusNotFound),
+			Title:  err.Error(),
+		})
+	}
 
+	response.Data = pokemon
 	return response
 }
